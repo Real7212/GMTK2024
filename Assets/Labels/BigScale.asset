@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8150fd1f8cd4cac44badf576ba9a370c, type: 3}
   m_Name: BigScale
   m_EditorClassIdentifier: 
-  _newScale: {x: 10, y: 2}
+  _newScale: {x: 2, y: 2}
+  _size: 2

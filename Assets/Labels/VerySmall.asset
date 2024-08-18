@@ -10,6 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8150fd1f8cd4cac44badf576ba9a370c, type: 3}
-  m_Name: SmallScale
+  m_Name: VerySmall
   m_EditorClassIdentifier: 
-  _newScale: {x: 1, y: 1}
+  _newScale: {x: 0.5, y: 0.5}
+  _size: 0

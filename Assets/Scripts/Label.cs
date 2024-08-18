@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class Label : MonoBehaviour, IDragHandler, IEndDragHandler
+public class Label : MonoBehaviour, IPointerDownHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private RectTransform _rect;
     [SerializeField] private Canvas _canvas;
@@ -14,9 +14,15 @@ public class Label : MonoBehaviour, IDragHandler, IEndDragHandler
         _startPos = _rect.anchoredPosition;
     }
 
-    public void OnDrag(PointerEventData eventData)
+    public void OnPointerDown(PointerEventData eventData)
     {
         LabelSystem.Instance.CurrentLabel = this;
+        _rect.position = Input.mousePosition;
+        LabelsFolder.Instance.Open();
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
         _rect.position = Input.mousePosition;
     }
 
