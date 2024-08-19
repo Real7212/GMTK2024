@@ -7,8 +7,10 @@ using UnityEngine.Events;
 public class Button : MonoBehaviour
 {
     [SerializeField] private Animator _animator;
+    [SerializeField] private ScalingObject _scaling;
     private bool _isPressing;
     private string _currentState;
+
 
     [SerializeField] private List<UnityEvent> OnButtonPressed;
     [SerializeField] private List<UnityEvent> OnButtonUnpressed;
@@ -19,17 +21,29 @@ public class Button : MonoBehaviour
         StartCoroutine(Animate(GetState()));
     }
 
-    private void OnTriggerEnter2D(Collider2D other) {
-        if(other.CompareTag("Player")) {
-            _isPressing = true;
-            foreach(var e in OnButtonPressed) {
-                e?.Invoke();
+    private void OnTriggerStay2D(Collider2D other) {
+
+        if(other.TryGetComponent<ScalingObject>(out var scalingObject)) {
+            if(!_isPressing && (int)scalingObject.CurrentLabel.Size >= (int)_scaling.CurrentLabel.Size) {
+                _isPressing = true;
+                foreach(var e in OnButtonPressed) {
+                    e?.Invoke();
+                }
+            }
+
+            if(_isPressing && (int)scalingObject.CurrentLabel.Size < (int)_scaling.CurrentLabel.Size) {
+                _isPressing = false;
+                foreach(var e in OnButtonUnpressed) {
+                    e?.Invoke();
+                }
             }
         }
+        
+        
     }
 
     private void OnTriggerExit2D(Collider2D other) {
-        if(other.CompareTag("Player")) {
+        if(other.CompareTag("Player") && _isPressing) {
             _isPressing = false;
             foreach(var e in OnButtonUnpressed) {
                 e?.Invoke();

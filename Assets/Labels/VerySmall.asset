@@ -12,5 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8150fd1f8cd4cac44badf576ba9a370c, type: 3}
   m_Name: VerySmall
   m_EditorClassIdentifier: 
+  _type: 0
   _newScale: {x: 0.5, y: 0.5}
   _size: 0
+  _shape: 0

@@ -1,28 +1,25 @@
+using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public enum PlayerType {
-    Circle,
-    Square,
-    Triangle,
-    Man
-}
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] private PlayerType _type;
-    
+
     [SerializeField] private Rigidbody2D _rigidbody;
     [SerializeField] private Animator _animator;
-    [SerializeField] private float _speed;
+    
+    private float _speed;
+    [SerializeField] private float _normalSpeed;
     [SerializeField] private float _jumpForce;
+    [SerializeField] private AudioSource _jumpSound;
     [SerializeField] private float _checkRadius;
     [SerializeField] private float _fallingRadius;
 
     [SerializeField] private LayerMask _groundLayer;
     private bool _canJump;
-    private bool _isFalling;
+    private bool _isStarted;
 
     private bool _isJumping;
     [SerializeField] private Transform _feetPos;
@@ -31,44 +28,69 @@ public class Player : MonoBehaviour
     private bool _facingRight = true;
 
     [SerializeField] private ScalingObject _scaling;
+
     [SerializeField] private GameObject _blood;
     private string _currentState;
+    private float _lockedTill;
+
+    private bool _isFinished;
+    [SerializeField] private AudioClip _stepClip;
+    private Coroutine _stepsCoroutine;
 
     private void FixedUpdate() {
         _rigidbody.velocity = new Vector2(_moveInput*_speed, _rigidbody.velocity.y);
     }
 
     private void Update() {
+
         _canJump = Physics2D.OverlapCircle(_feetPos.position, _checkRadius, _groundLayer);
-        _isFalling = !Physics2D.OverlapCircle(_feetPos.position, _fallingRadius, _groundLayer);
-        
-        _moveInput = _type == PlayerType.Man ? Input.GetAxisRaw("Horizontal") : 0;
-        if((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) && _canJump) {
-            Jump();
+        if(_canJump && !_isStarted) _isStarted = true;
+
+        if(!_isFinished && _isStarted) {
+            
+            _moveInput = Input.GetAxisRaw("Horizontal");
+            if((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow)) && _canJump) {
+                Jump();
+            }
+
+            
+
+            if(_facingRight && _moveInput < 0) Flip();
+            if(!_facingRight && _moveInput > 0) Flip(); 
+
+            _speed = _scaling.CurrentLabel.Size switch {
+                Size.SMALL => _normalSpeed * 1.25f,
+                Size.MEDIUM => _normalSpeed * 1f,
+                Size.BIG => _normalSpeed * 0.75f,
+                _ => _normalSpeed * 1f
+            };
+
+            if(_animator == null) return;
+
+            _animator.speed = _scaling.CurrentLabel.Size switch {
+                Size.SMALL => 2f,
+                Size.MEDIUM => 1f,
+                Size.BIG => 0.5f,
+                _ => 1f
+            };
+
+
         }
 
-        
-
-        if(_facingRight && _moveInput < 0) Flip();
-        if(!_facingRight && _moveInput > 0) Flip(); 
-
         if(_animator == null) return;
-
-        _animator.speed = _scaling.CurrentSize switch {
-            Size.SMALL => 2f,
-            Size.MEDIUM => 1f,
-            Size.BIG => 0.5f,
-            _ => 1f
-        };
-        
         if(_currentState == GetState()) return;
         StartCoroutine(Animate(GetState()));
+        
+
+
+
         
     }
 
     private void Jump() {
         _isJumping = true;
         _rigidbody.AddForce(Vector2.up*_jumpForce, ForceMode2D.Impulse);
+        _jumpSound.Play();
     }
 
     private void Flip() {
@@ -78,43 +100,41 @@ public class Player : MonoBehaviour
     
 
     private string GetState() {
-        if(_isJumping && _rigidbody.velocity.y>_jumpForce) return "jump";
-        if(_isFalling && _rigidbody.velocity.y<_jumpForce) return "fall";
+        
+        if(_isFinished) return "finish";
 
-        return _moveInput == 0 ? "idle" : "walking";
+        if(_canJump){
+            if(_isJumping) return "land";
 
+            return _moveInput == 0 ? "idle" : "walking";
+        }
+
+        if(_rigidbody.velocity.y < 0) return "fall";
+        if (_rigidbody.velocity.y > 0) return "jump";
+        
+        
+        return "land";
     }
 
     private IEnumerator Animate(string state) {
 
-        switch(state) {
-            case "idle":
-                _animator.CrossFade("idle", 0.1f, 0);
-                yield return new WaitForSeconds(0.1f);
-                _animator.CrossFade("idle", 0f, 0);
-                _currentState = "idle";
-                break;
-            case "walking":
-                _animator.CrossFade("walking", 0.1f, 0);
-                yield return new WaitForSeconds(0.1f);
-                _animator.CrossFade("walking", 0f, 0);
-                _currentState = "walking";
-                break;
-            case "jump":
-                _animator.CrossFade("jump", 0f, 0);
-                _currentState = "jump";
-                break;
-            case "fall":
-                _animator.CrossFade("fall", 0.1f, 0);
-                yield return new WaitForSeconds(0.1f);
-                _animator.CrossFade("fall", 0f, 0);
-                _currentState = "fall";
-                break;
-
-
-        }
-
+        // switch(state) {
+        //     case "idle":
+        //         _animator.CrossFade("idle", 0.1f, 0);
+        //         yield return new WaitForSeconds(0.1f);
+        //         _animator.CrossFade("idle", 0f, 0);
+        //         _currentState = "idle";
+        //         break;
+        //     case "walking":
+                
+        //     case 
+        // }
+        _animator.CrossFade(state, 0.1f, 0);
+        yield return new WaitForSeconds(0.1f);
+        _animator.CrossFade(state, 0f, 0);
+        _currentState = state;
     }
+
 
     private void OnDrawGizmosSelected() {
         Gizmos.DrawWireSphere(_feetPos.position, _checkRadius);
@@ -124,6 +144,21 @@ public class Player : MonoBehaviour
 
     public void Dead() {
         Instantiate(_blood, transform.position, Quaternion.identity);
+        SceneLoader.Instance.Die();
         Destroy(gameObject);
+        
+    }
+
+    public void Land() {
+        _isJumping = false;
+    }
+
+    public void PlayStepSound() {
+        AudioSource.PlayClipAtPoint(_stepClip, new Vector3(0, 0, -10), 0.5f);
+    }
+
+    public void Finish() {
+        _isFinished = true;
+        _rigidbody.isKinematic = true;
     }
 }

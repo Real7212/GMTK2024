@@ -17,8 +17,10 @@ public class Label : MonoBehaviour, IPointerDownHandler, IDragHandler, IEndDragH
     public void OnPointerDown(PointerEventData eventData)
     {
         LabelSystem.Instance.CurrentLabel = this;
+        transform.SetParent(LabelsFolder.Instance.transform.parent, false);
         _rect.position = Input.mousePosition;
         LabelsFolder.Instance.Open();
+        
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -27,6 +29,7 @@ public class Label : MonoBehaviour, IPointerDownHandler, IDragHandler, IEndDragH
     }
 
     public void OnEndDrag(PointerEventData eventData) {
+        transform.SetParent(LabelsFolder.Instance.transform, false);
         _rect.anchoredPosition = _startPos;
     }
 }
