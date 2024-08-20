@@ -43,7 +43,10 @@ public class Player : MonoBehaviour
 
     private void Update() {
 
-        _canJump = Physics2D.OverlapCircle(_feetPos.position, _checkRadius, _groundLayer);
+        _canJump = _scaling.CurrentShape == ShapeType.Normal ? 
+            Physics2D.Raycast(_feetPos.position, Vector2.down, _checkRadius, _groundLayer) : 
+            Physics2D.OverlapCircle(_feetPos.position, _checkRadius, _groundLayer);
+            
         if(_canJump && !_isStarted) _isStarted = true;
 
         if(!_isFinished && _isStarted) {
@@ -137,9 +140,8 @@ public class Player : MonoBehaviour
 
 
     private void OnDrawGizmosSelected() {
-        Gizmos.DrawWireSphere(_feetPos.position, _checkRadius);
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(_feetPos.position, _fallingRadius);
+        Gizmos.DrawRay(_feetPos.position, Vector2.down*_checkRadius);
+
     }
 
     public void Dead() {

@@ -6,6 +6,11 @@ public enum LabelType {
     Shape
 }
 
+public enum ScaleType {
+    Additive,
+    Set
+}
+
 public enum ShapeType {
     Circle,
     Square,
@@ -21,6 +26,7 @@ public class LabelSO : ScriptableObject
     [SerializeField] private LabelType _type;
 
     [Header("Scale")]
+    [SerializeField] private ScaleType _scaleType = ScaleType.Set;
     [SerializeField] private Vector2 _newScale;
     [SerializeField] private Size _size;
 
@@ -31,4 +37,5 @@ public class LabelSO : ScriptableObject
     public Vector2 NewScale => _newScale;
     public Size Size => _size;
     public ShapeType Shape => _shape;
+    public ScaleType ScaleType => _scaleType;
 }

@@ -15,6 +15,7 @@ public class ScalingObject : MonoBehaviour
     public Vector2 _previousScale;
     public Vector2 Scale;
     public LabelSO CurrentLabel;
+    public ShapeType CurrentShape = ShapeType.Normal;
     
     [SerializeField] private SpriteRenderer _renderer;
     [SerializeField] private SpriteRenderer _shadow;
@@ -63,7 +64,7 @@ public class ScalingObject : MonoBehaviour
     }
     public void ChangeScale(LabelSO labelSO) {
         _previousScale = Scale;
-
+        Vector3 newScale = labelSO.ScaleType == ScaleType.Additive ? transform.localScale + (Vector3)labelSO.NewScale : labelSO.NewScale;
         if(_renderer != null) {
             Sequence.Create(useUnscaledTime: true)
                 .Chain(Tween.Color(_renderer, Color.white, Color.black, 0.3f, Ease.OutExpo).OnComplete(() => {
@@ -94,12 +95,12 @@ public class ScalingObject : MonoBehaviour
                     }
                     
                 }))
-                .Chain(Tween.Scale(transform, transform.localScale, labelSO.NewScale, 0.5f, Ease.OutExpo))
+                .Chain(Tween.Scale(transform, transform.localScale, newScale, 0.5f, Ease.OutExpo))
                 .OnComplete(() => {Tween.Color(_renderer, Color.black, Color.white, 0.3f, Ease.OutExpo);});
             
         } else {
             CurrentLabel = labelSO;
-            Tween.Scale(transform, transform.localScale, labelSO.NewScale, 0.5f, Ease.OutExpo);
+            Tween.Scale(transform, transform.localScale, newScale, 0.5f, Ease.OutExpo);
         }
 
         
@@ -107,10 +108,10 @@ public class ScalingObject : MonoBehaviour
     }
 
     public void ChangeShape(LabelSO labelSO) {
+    
         Sequence.Create(useUnscaledTime: true)
                 .Chain(Tween.Color(_renderer, Color.white, Color.black, 0.3f, Ease.OutExpo).OnComplete(() => {
-                    CurrentLabel = labelSO;
-                    switch(CurrentLabel.Shape) {
+                    switch(labelSO.Shape) {
                         case ShapeType.Circle:
                             _circle.transform.parent = transform.parent;
                             _shapes.parent = _circle.transform;
