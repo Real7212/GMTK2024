@@ -44,9 +44,9 @@ public class Player : MonoBehaviour
     private void Update() {
 
         _canJump = _scaling.CurrentShape == ShapeType.Normal ? 
-            Physics2D.Raycast(_feetPos.position, Vector2.down, _checkRadius, _groundLayer) : 
+            Physics2D.Raycast(_feetPos.position, Vector2.down, _scaling.CurrentLabel.Size == Size.BIG ? _checkRadius + 0.5f : _checkRadius, _groundLayer) : 
             Physics2D.OverlapCircle(_feetPos.position, _checkRadius, _groundLayer);
-            
+
         if(_canJump && !_isStarted) _isStarted = true;
 
         if(!_isFinished && _isStarted) {
@@ -146,6 +146,7 @@ public class Player : MonoBehaviour
 
     public void Dead() {
         Instantiate(_blood, transform.position, Quaternion.identity);
+        Music.Instance.Dead();
         SceneLoader.Instance.Die();
         Destroy(gameObject);
         

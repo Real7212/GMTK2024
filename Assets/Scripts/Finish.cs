@@ -15,7 +15,7 @@ public class Finish : MonoBehaviour
         ) {
             Tween.Scale(player.transform, 0.3f, 1f, Ease.OutExpo);
             Tween.Position(player.transform, _playerTo.position, 2f, Ease.OutExpo)
-                .OnComplete(() => { player.gameObject.SetActive(false); SceneLoader.Instance.Fade(true, true, SceneManager.GetActiveScene().buildIndex+1);});
+                .OnComplete(() => { player.gameObject.SetActive(false); SceneLoader.Instance.Fade(true, true, SceneManager.GetActiveScene().buildIndex+1);}, warnIfTargetDestroyed: false);
         }
     }
 }

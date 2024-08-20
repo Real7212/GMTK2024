@@ -12,8 +12,9 @@ public enum Size {
 
 public class ScalingObject : MonoBehaviour
 {
-    public Vector2 _previousScale;
+    public LabelSO PreviousLabel;
     public Vector2 Scale;
+    public Size CurrentSize;
     public LabelSO CurrentLabel;
     public ShapeType CurrentShape = ShapeType.Normal;
     
@@ -42,11 +43,17 @@ public class ScalingObject : MonoBehaviour
     [SerializeField] private GameObject _box;
     [SerializeField] private GameObject _triangle;
 
+    private Sequence _s;
+
     
 
 
     private void Awake() {
         Scale = transform.localScale;
+    }
+
+    private void Start() {
+        FastChangeScale(CurrentLabel);
     }
 
     private void OnMouseEnter() {
@@ -63,15 +70,25 @@ public class ScalingObject : MonoBehaviour
         if(_outline != null) _outline.SetActive(false);
     }
     public void ChangeScale(LabelSO labelSO) {
-        _previousScale = Scale;
-        Vector3 newScale = labelSO.ScaleType == ScaleType.Additive ? transform.localScale + (Vector3)labelSO.NewScale : labelSO.NewScale;
+        PreviousLabel = CurrentLabel;
+        Vector3 newScale = labelSO.ScaleType == ScaleType.Additive ? (labelSO.Size == Size.SMALL ? transform.localScale / 2 : transform.localScale * 2) : labelSO.NewScale;
         if(_renderer != null) {
-            Sequence.Create(useUnscaledTime: true)
-                .Chain(Tween.Color(_renderer, Color.white, Color.black, 0.3f, Ease.OutExpo).OnComplete(() => {
+            var color = _renderer.color;
+            if(_s.isAlive) return;
+            _s = Sequence.Create(useUnscaledTime: true)
+                .Chain(Tween.Color(_renderer, _renderer.color, Color.black, 0.3f, Ease.OutExpo).OnComplete(() => {
                     CurrentLabel = labelSO;
                     if(_renderer == null) return;
                     
-                    var sprite = labelSO.Size switch
+                    CurrentSize = newScale.x switch {
+                        0.5f => Size.SMALL,
+                        1f => Size.MEDIUM,
+                        2f => Size.BIG,
+                        _ => CurrentSize
+                    };
+                    
+
+                    var sprite = CurrentSize switch
                     {
                         Size.SMALL => _small,
                         Size.MEDIUM => _normal,
@@ -96,7 +113,7 @@ public class ScalingObject : MonoBehaviour
                     
                 }))
                 .Chain(Tween.Scale(transform, transform.localScale, newScale, 0.5f, Ease.OutExpo))
-                .OnComplete(() => {Tween.Color(_renderer, Color.black, Color.white, 0.3f, Ease.OutExpo);});
+                .OnComplete(() => {Tween.Color(_renderer, Color.black, color, 0.3f, Ease.OutExpo);});
             
         } else {
             CurrentLabel = labelSO;
@@ -144,6 +161,46 @@ public class ScalingObject : MonoBehaviour
             
     }
 
+    public void FastChangeScale(LabelSO labelSO) {
+        Vector3 newScale = labelSO.ScaleType == ScaleType.Additive ? (labelSO.Size == Size.SMALL ? transform.localScale / 2 : transform.localScale * 2) : labelSO.NewScale;
+        transform.localScale = newScale;
+
+        PreviousLabel = CurrentLabel;
+        CurrentLabel = labelSO;
+        if(_renderer == null) return;
+        
+        CurrentSize = newScale.x switch {
+            0.5f => Size.SMALL,
+            1f => Size.MEDIUM,
+            2f => Size.BIG,
+            _ => CurrentSize
+        };
+        
+
+        var sprite = CurrentSize switch
+        {
+            Size.SMALL => _small,
+            Size.MEDIUM => _normal,
+            Size.BIG => _big,
+            _ => _normal
+        };
+        
+        _renderer.sprite = sprite;
+        if(_shadow != null) _shadow.sprite = sprite;
+        if(_outlineRenderer != null) {
+
+            var outline = labelSO.Size switch
+            {
+                Size.SMALL => _smallOutline,
+                Size.MEDIUM => _normalOutline,
+                Size.BIG => _bigOutline,
+                _ => _normalOutline
+            };
+            _outlineRenderer.sprite = outline;
+
+        }
+
+    }
     public bool IsShapeActive(ShapeType type) {
         return type switch
         {
@@ -156,14 +213,11 @@ public class ScalingObject : MonoBehaviour
     }
 
     public void ChangeScale(int sqrScale) {
-        _previousScale = Scale;
-
 
         Scale = new Vector2(sqrScale, sqrScale);
     }
 
     public void Return() {
-        Tween.Scale(transform, transform.localScale, _previousScale, 0.5f, Ease.OutExpo, useUnscaledTime: true);
-        Scale = _previousScale;
+        Tween.Scale(transform, transform.localScale, PreviousLabel.NewScale, 0.5f, Ease.OutExpo, useUnscaledTime: true);
     }
 }
